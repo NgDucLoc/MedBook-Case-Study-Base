@@ -1,0 +1,17 @@
+node_modules/
+
+# Biến môi trường thật — chỉ commit .env.example
+.env
+.env.local
+.env.*.local
+
+# Log
+*.log
+npm-debug.log*
+
+# Hệ điều hành / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Mặc định sáng; chuyển tối bằng nút trong app, không theo thiết lập máy -->
+    <meta name="color-scheme" content="light" />
+    <title>MedBook — Lịch khám</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script>
+      // Đặt theme trước khi vẽ để không bị chớp màu khi tải trang.
+      (function () {
+        var saved = localStorage.getItem("medbookTheme");
+        if (saved === "light" || saved === "dark") {
+          document.documentElement.setAttribute("data-theme", saved);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <!-- ────────────────────────────  ĐĂNG NHẬP  ──────────────────────────── -->
+    <section id="loginScreen" class="auth">
+      <div class="auth-brandside">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-tick"></span>
+          </span>
+          <span class="brand-name">
+            <strong>MedBook</strong>
+            <span>Điều phối lịch khám</span>
+          </span>
+        </div>
+
+        <div class="auth-copy">
+          <p class="eyebrow">Bản demo AI-assisted SDLC</p>
+          <h1>Mỗi khung giờ<br />chỉ thuộc về một người.</h1>
+          <p class="lede">
+            Bệnh nhân tìm bác sĩ và giữ chỗ. Nhân viên xác nhận, điều chỉnh lịch
+            làm việc trong ngày. Dữ liệu mẫu đã sẵn sàng để thao tác ngay.
+          </p>
+        </div>
+
+        <!-- Bản thu nhỏ của time rail — thành phần chính của giao diện bên trong -->
+        <ol class="rail rail--preview" aria-hidden="true">
+          <li class="rail-row is-taken">
+            <span class="rail-time"><b>08:00</b><i>08:30</i></span>
+            <span class="rail-card">
+              <span class="rail-title">BS. Phạm Mạnh Hùng</span>
+              <span class="chip chip--busy">Đã đặt</span>
+            </span>
+          </li>
+          <li class="rail-row is-now">
+            <span class="rail-time"><b>09:30</b><i>10:00</i></span>
+            <span class="rail-card">
+              <span class="rail-title">BS. Vũ Ngọc Hà</span>
+              <span class="chip chip--open">Còn trống</span>
+            </span>
+          </li>
+          <li class="rail-row">
+            <span class="rail-time"><b>14:00</b><i>14:30</i></span>
+            <span class="rail-card">
+              <span class="rail-title">BS. Lê Minh Quân</span>
+              <span class="chip chip--open">Còn trống</span>
+            </span>
+          </li>
+        </ol>
+
+        <dl class="auth-facts">
+          <div><dt>Vai trò</dt><dd>2</dd></div>
+          <div><dt>Tài khoản demo</dt><dd>8</dd></div>
+          <div><dt>Kết nối ngoài</dt><dd>0</dd></div>
+        </dl>
+      </div>
+
+      <div class="auth-formside">
+        <form id="loginForm" class="auth-form">
+          <header class="auth-form-head">
+            <h2>Đăng nhập</h2>
+            <p>Chọn một tài khoản có sẵn hoặc nhập email.</p>
+          </header>
+
+          <label class="field">
+            <span class="field-label">Tài khoản có sẵn</span>
+            <select id="quickAccount"></select>
+          </label>
+
+          <div class="field-split" role="separator" aria-hidden="true">
+            <span>hoặc nhập tay</span>
+          </div>
+
+          <label class="field">
+            <span class="field-label">Email</span>
+            <input id="loginEmail" type="email" autocomplete="username" placeholder="ten@medbook.local" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">Mật khẩu</span>
+            <input id="loginPassword" type="password" autocomplete="current-password" value="demo123" />
+          </label>
+
+          <button type="submit" class="btn btn--primary btn--block">Đăng nhập</button>
+
+          <p class="field-note">
+            Mật khẩu chung cho mọi tài khoản demo: <code>demo123</code>
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- ────────────────────────────  ỨNG DỤNG  ──────────────────────────── -->
+    <div id="appShell" class="shell hidden">
+      <aside class="side">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-mark-tick"></span>
+          </span>
+          <span class="brand-name">
+            <strong>MedBook</strong>
+            <span>Điều phối lịch khám</span>
+          </span>
+        </div>
+
+        <section class="who">
+          <span id="roleBadge" class="chip chip--role">Bệnh nhân</span>
+          <h2 id="currentName">Người dùng</h2>
+          <p id="currentUser" class="who-mail"></p>
+        </section>
+
+        <nav id="nav" class="nav" aria-label="Điều hướng chính"></nav>
+
+        <div class="side-foot">
+          <button id="themeToggle" class="btn btn--ghost btn--block" type="button" aria-pressed="false">
+            <span class="theme-ico" aria-hidden="true"></span>
+            <span id="themeLabel">Giao diện tối</span>
+          </button>
+          <button id="logoutBtn" class="btn btn--quiet btn--block" type="button">Đăng xuất</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-title">
+            <p class="eyebrow">MedBook</p>
+            <h1 id="pageTitle">Lịch khám</h1>
+          </div>
+          <p id="apiStatus" class="status" role="status">Đang kết nối</p>
+        </header>
+
+        <!-- ───────────  BỆNH NHÂN  ─────────── -->
+        <section id="patientView" class="view">
+          <dl class="statbar">
+            <div><dt>Bác sĩ hiển thị</dt><dd id="doctorMetric">0</dd></div>
+            <div><dt>Lịch của tôi</dt><dd id="myAppointmentMetric">0</dd></div>
+            <div><dt>Khung giờ trống</dt><dd id="patientSlotMetric">0</dd></div>
+          </dl>
+
+          <div class="cols">
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h2>Tìm bác sĩ</h2>
+                  <p>Lọc theo chuyên khoa hoặc tìm theo tên.</p>
+                </div>
+              </header>
+              <div class="controls">
+                <select id="specializationFilter" aria-label="Chuyên khoa"></select>
+                <input id="doctorSearch" placeholder="Tên bác sĩ" aria-label="Tên bác sĩ" />
+                <button id="searchDoctorsBtn" class="btn btn--primary" type="button">Tìm</button>
+              </div>
+              <div id="doctorList" class="doctors"></div>
+            </section>
+
+            <section class="panel panel--rail">
+              <header class="panel-head">
+                <div>
+                  <h2>Khung giờ trống</h2>
+                  <p id="slotHint">Chọn một bác sĩ để xem lịch khám.</p>
+                </div>
+              </header>
+              <div class="controls">
+                <input id="slotDate" type="date" aria-label="Ngày khám" />
+                <select id="appointmentType" aria-label="Hình thức khám">
+                  <option value="in_person">Khám trực tiếp</option>
+                  <option value="online">Tư vấn online</option>
+                </select>
+              </div>
+              <div id="slotList" class="rail-wrap"></div>
+            </section>
+          </div>
+
+          <section class="panel">
+            <header class="panel-head">
+              <div>
+                <h2>Lịch của tôi</h2>
+                <p>Theo dõi trạng thái và hủy lịch khi cần.</p>
+              </div>
+              <button id="refreshMyAppointments" class="btn btn--quiet" type="button">Tải lại</button>
+            </header>
+            <div id="myAppointments" class="rail-wrap"></div>
+          </section>
+        </section>
+
+        <!-- ───────────  NHÂN VIÊN  ─────────── -->
+        <section id="staffView" class="view hidden">
+          <dl class="statbar">
+            <div><dt>Lịch trong ngày</dt><dd id="staffAppointmentMetric">0</dd></div>
+            <div><dt>Khung giờ trống</dt><dd id="availableSlotMetric">0</dd></div>
+            <div><dt>Bác sĩ</dt><dd id="staffDoctorMetric">0</dd></div>
+          </dl>
+
+          <div class="cols">
+            <section class="panel panel--rail">
+              <header class="panel-head">
+                <div>
+                  <h2>Lịch hẹn</h2>
+                  <p>Xác nhận hoặc hủy lịch của bệnh nhân.</p>
+                </div>
+                <div class="controls controls--tight">
+                  <input id="staffDate" type="date" aria-label="Ngày" />
+                  <button id="loadStaffAppointments" class="btn btn--primary" type="button">Tải lịch</button>
+                </div>
+              </header>
+              <div id="staffAppointments" class="rail-wrap"></div>
+            </section>
+
+            <section class="panel panel--rail">
+              <header class="panel-head">
+                <div>
+                  <h2>Lịch làm việc</h2>
+                  <p>Thêm khung giờ hoặc chặn giờ bác sĩ bận.</p>
+                </div>
+                <button id="refreshManageSlots" class="btn btn--quiet" type="button">Tải lại</button>
+              </header>
+
+              <form id="slotForm" class="newslot">
+                <label class="field">
+                  <span class="field-label">Bác sĩ</span>
+                  <select id="slotDoctor"></select>
+                </label>
+                <div class="newslot-times">
+                  <label class="field">
+                    <span class="field-label">Ngày</span>
+                    <input id="newSlotDate" type="date" />
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Bắt đầu</span>
+                    <input id="newSlotStart" type="time" value="08:00" />
+                  </label>
+                  <label class="field">
+                    <span class="field-label">Kết thúc</span>
+                    <input id="newSlotEnd" type="time" value="08:30" />
+                  </label>
+                </div>
+                <button type="submit" class="btn btn--primary btn--block">Thêm khung giờ</button>
+              </form>
+
+              <div id="manageSlots" class="rail-wrap"></div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

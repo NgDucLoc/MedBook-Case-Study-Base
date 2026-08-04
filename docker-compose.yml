@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: medbook
+      POSTGRES_PASSWORD: medbook
+      POSTGRES_DB: medbook
+    ports:
+      # Cổng máy thật là 55432 để không đụng PostgreSQL 5432 có sẵn.
+      # Bên trong mạng Docker vẫn là 5432.
+      - "55432:5432"
+    volumes:
+      - medbook_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medbook -d medbook"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      PORT: 4300
+      DATABASE_URL: postgres://medbook:medbook@db:5432/medbook
+      DEMO_AUTH_ENABLED: "true"
+    ports:
+      - "4300:4300"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  medbook_pgdata:
