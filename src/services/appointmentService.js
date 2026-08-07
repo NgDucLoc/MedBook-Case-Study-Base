@@ -1,6 +1,7 @@
 const { getClient } = require("../db/pool");
 const appointmentRepository = require("../repositories/appointmentRepository");
 const slotRepository = require("../repositories/slotRepository");
+const offerEngineService = require("./offerEngineService");
 const { toInt, required } = require("../utils/validate");
 const { httpError } = require("../errors");
 
@@ -31,6 +32,14 @@ async function bookAppointment({ slotId, patientId, type }) {
     client.release();
   }
 
+  // doc/specs/05-api-contract.md §5.2: đặt lịch trực tiếp cũng phải huỷ offer đang treo
+  // trên slot này (nếu có) — không thì offer đó "treo" tới khi hết hạn tự nhiên.
+  try {
+    await offerEngineService.onSlotTaken(normalizedSlotId);
+  } catch (hookError) {
+    console.error(`[slot-taken] hook failed slot=${normalizedSlotId} reason=${hookError.message}`);
+  }
+
   return appointmentRepository.findDetailedById(appointmentId);
 }
 
@@ -53,6 +62,7 @@ async function confirmAppointment(id) {
 
 async function cancelAppointment({ appointmentId, user }) {
   const id = toInt(appointmentId);
+  let freedSlotId = null;
 
   const client = await getClient();
   try {
@@ -69,11 +79,22 @@ async function cancelAppointment({ appointmentId, user }) {
     await appointmentRepository.updateStatus(client, id, "cancelled");
     await slotRepository.updateStatus(client, appointment.slot_id, "available");
     await client.query("commit");
+    freedSlotId = appointment.slot_id;
   } catch (error) {
     await client.query("rollback");
     throw error;
   } finally {
     client.release();
+  }
+
+  // BR-04 / BR-07 nguồn 1: phát sự kiện SlotAvailable SAU khi commit + release.
+  // Lỗi của hook được nuốt lại — huỷ lịch vẫn thành công.
+  if (freedSlotId != null) {
+    try {
+      await offerEngineService.onSlotBecameAvailable(freedSlotId);
+    } catch (hookError) {
+      console.error(`[slot-available] hook failed slot=${freedSlotId} reason=${hookError.message}`);
+    }
   }
 
   return appointmentRepository.findDetailedById(id);

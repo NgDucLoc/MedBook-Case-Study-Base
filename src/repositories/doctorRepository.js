@@ -31,4 +31,9 @@ async function searchDoctors({ specializationId, q }) {
   );
 }
 
-module.exports = { listSpecializations, searchDoctors };
+async function findById(id) {
+  const rows = await query("select id, name, title, room from doctors where id = $1", [id]);
+  return rows[0] || null;
+}
+
+module.exports = { listSpecializations, searchDoctors, findById };

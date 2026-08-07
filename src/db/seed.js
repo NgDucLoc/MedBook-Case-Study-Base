@@ -110,6 +110,30 @@ async function seed(options = {}) {
     select setval('slots_id_seq', coalesce((select max(id) from slots), 1));
     select setval('appointments_id_seq', coalesce((select max(id) from appointments), 1));
   `);
+
+  // doc/specs/04-data-model.md §4.7 — 3 entry minh chứng BR-02 (ưu tiên y tế thắng thời
+  // gian chờ) và BR-03b (khớp theo chuyên khoa). KHÔNG seed sẵn appointment_offers: offer
+  // phải do Offer Engine tự sinh ra để chứng minh nó thật sự chạy, không phải dữ liệu giả.
+  await pool.query(`
+    insert into waiting_list_entries
+      (id, patient_id, doctor_id, specialization_id, medical_priority, preferred_type,
+       status, created_by_user_id, created_at, updated_at) values
+      (1, 2, 1, null, 'normal', 'in_person', 'waiting', 2, now() - interval '2 hours', now() - interval '2 hours'),
+      (2, 3, 1, null, 'urgent', 'in_person', 'waiting', 2, now() - interval '1 hour', now() - interval '1 hour'),
+      (3, 4, null, 1, 'high', 'in_person', 'waiting', 2, now() - interval '30 minutes', now() - interval '30 minutes')
+    on conflict (id) do update set
+      patient_id = excluded.patient_id,
+      doctor_id = excluded.doctor_id,
+      specialization_id = excluded.specialization_id,
+      medical_priority = excluded.medical_priority,
+      preferred_type = excluded.preferred_type,
+      status = excluded.status,
+      created_by_user_id = excluded.created_by_user_id;
+
+    select setval('waiting_list_entries_id_seq', coalesce((select max(id) from waiting_list_entries), 1));
+    select setval('appointment_offers_id_seq', coalesce((select max(id) from appointment_offers), 1));
+    select setval('offer_events_id_seq', coalesce((select max(id) from offer_events), 1));
+  `);
 }
 
 if (require.main === module) {

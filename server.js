@@ -6,6 +6,9 @@ const { seed } = require("./src/db/seed");
 const authRoutes = require("./src/routes/auth.routes");
 const doctorRoutes = require("./src/routes/doctors.routes");
 const appointmentRoutes = require("./src/routes/appointments.routes");
+const waitingListRoutes = require("./src/routes/waiting-list.routes");
+const offerRoutes = require("./src/routes/offers.routes");
+const offerExpirySweeper = require("./src/services/offerExpirySweeper");
 
 const PORT = Number(process.env.PORT || 4300);
 
@@ -26,6 +29,8 @@ app.get("/health", async (req, res, next) => {
 app.use("/api", authRoutes);
 app.use("/api", doctorRoutes);
 app.use("/api", appointmentRoutes);
+app.use("/api", waitingListRoutes);
+app.use("/api", offerRoutes);
 
 app.use("/api", (req, res) => {
   res.status(404).json({ error: "Không tìm thấy API" });
@@ -52,6 +57,10 @@ async function start() {
   app.listen(PORT, () => {
     console.log(`MedBook đang chạy tại http://localhost:${PORT}`);
   });
+  // BR-05/BR-06: sweeper quét offer hết hạn. NFR-08: tắt được bằng OFFER_ENGINE_ENABLED=false.
+  if (process.env.OFFER_ENGINE_ENABLED !== "false") {
+    offerExpirySweeper.start();
+  }
 }
 
 if (require.main === module) {

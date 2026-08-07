@@ -1,45 +1,18 @@
-# MedBook — Hướng dẫn sử dụng
+# MedBook — Hướng dẫn chạy
 
-## Cách 1 — Chạy trên GitHub Codespaces (khuyên dùng)
-Không cần cài Docker/Node/PostgreSQL trên máy — mọi thứ chạy trên trình duyệt.
+## Hai nhánh
+| Nhánh | Nội dung |
+|---|---|
+| `main` | Code gốc MedBook (chưa có tính năng mới) |
+| `day03` | **Đã bổ sung** tính năng *Dynamic Appointment Rescheduling & Waiting List* (waitlist + offer + timeout) |
 
-### Bước 1: Đăng nhập GitHub
-1. Vào [github.com](https://github.com) → **Sign in** (nếu chưa có tài khoản thì **Sign up** trước, miễn phí).
-2. Đăng nhập xong, vào trang repo: `https://github.com/trhuyyy13/MedBook-Case-Study`.
-
-### Bước 2: Tạo Codespace
-1. Bấm nút xanh **Code** ở góc phải trên repo.
-2. Chọn tab **Codespaces** → **Create codespace on main**.
-3. Đợi vài chục giây tới vài phút để Codespace khởi tạo (lần đầu chậm hơn các lần sau) — trình duyệt sẽ mở ra một cửa sổ VS Code chạy trên web.
-
-### Bước 3: Chạy ứng dụng trong Codespace
-Trong terminal của Codespace (menu **Terminal → New Terminal** nếu chưa có sẵn):
-```bash
-docker compose up --build
-```
-Đợi log hiện `MedBook đang chạy tại http://localhost:4300`.
-
-### Bước 4: Mở ứng dụng
-Codespaces tự phát hiện cổng `4300` đang chạy và hiện thông báo nhỏ ở góc dưới màn hình:
-**"Your application running on port 4300 is available."** — bấm **Open in Browser**.
-
-Nếu bỏ lỡ thông báo đó: mở tab **PORTS** ở panel dưới cùng của VS Code (cạnh tab Terminal) →
-tìm dòng cổng `4300` → bấm biểu tượng **hình cầu/quả địa cầu** (Open in Browser) ở cột cuối.
-
-> **Chia sẻ link cho người khác xem:** mặc định cổng forward là **Private** (chỉ tài khoản có
-> quyền vào repo mới xem được). Muốn share công khai: tab **PORTS** → chuột phải vào dòng cổng
-> `4300` → **Port Visibility** → **Public**.
->
-> **Đóng Codespace khi xong việc** (tránh tốn giờ miễn phí hàng tháng của GitHub): vào
-> [github.com/codespaces](https://github.com/codespaces) → chọn Codespace đang chạy → **Stop
-> codespace**, hoặc **Delete** nếu không cần dùng lại.
-
-## Cách 2 — Chạy trên máy local bằng Docker
-Cần **Docker Desktop** đang chạy trên máy. Không cần cài Node/PostgreSQL.
+## Chạy bằng Docker (khuyên dùng)
+Cần **Docker Desktop** đang chạy. Không cần cài Node/PostgreSQL.
 
 ```bash
 git clone https://github.com/trhuyyy13/MedBook-Case-Study.git
 cd MedBook-Case-Study
+git checkout day03          # nhánh có tính năng mới (bỏ dòng này nếu muốn xem bản gốc: main)
 docker compose up --build
 ```
 
@@ -50,6 +23,13 @@ App tự tạo schema + nạp dữ liệu mẫu ở lần chạy đầu.
 |---|---|
 | Ứng dụng | `4300` |
 | PostgreSQL | `55432` |
+
+### Đổi qua lại giữa 2 nhánh
+```bash
+git checkout main   && docker compose up --build   # xem bản gốc
+git checkout day03  && docker compose up --build   # xem bản có tính năng
+```
+> Migration dùng `create table if not exists` nên chuyển nhánh an toàn; dữ liệu giữ trong volume. Muốn làm lại từ đầu: `docker compose down -v`.
 
 ### Lệnh Docker hay dùng
 ```bash
@@ -67,16 +47,31 @@ docker compose down -v        # dừng + xoá sạch dữ liệu
 
 *(Còn: `linh@`, `huy@`, `nhi@`, `nam@` — patient; `khanh.staff@`, `lan.staff@` — staff.)*
 
+## Tính năng mới ở `day03`
+Khi một slot trở nên trống (bệnh nhân huỷ lịch, hoặc staff mở lại slot), hệ thống **tự động** chọn bệnh nhân phù hợp trong danh sách chờ (FIFO) → gửi lời mời (offer) → xử lý chấp nhận/từ chối/hết hạn, **không đặt trùng lịch**.
+
+API chính (prefix `/api`):
+- `POST /waitlist`, `DELETE /waitlist/:id`, `GET /my-waitlist` (patient) · `GET /waitlist` (staff)
+- `GET /my-offers`, `POST /offers/:id/accept`, `POST /offers/:id/decline` (patient) · `GET /offers` (staff)
+- `GET /notifications`
+
+Tham số cấu hình (biến môi trường, có mặc định):
+- `OFFER_TIMEOUT_MINUTES=15` — thời hạn phản hồi offer
+- `OFFER_JOB_INTERVAL_MS=60000` — chu kỳ job quét offer hết hạn
+
 ## (Tuỳ chọn) Chạy test
 Cần PostgreSQL ở `localhost:55432` (bật bằng `docker compose up -d db`), rồi:
 
 ```bash
 npm install
-npm test
+OFFER_JOB_DISABLED=1 npm test
 ```
 
-`npm test` chạy `node --test --test-concurrency=1 tests/regression-core.test.js` — bộ test
-bảo vệ các tính năng cốt lõi (auth, doctors, slots, appointments). Chi tiết mục đích và phạm vi:
-[`doc/regression-testing.md`](./doc/regression-testing.md).
+`npm test` chạy `node --test --test-concurrency=1 tests/*.test.js`:
+- `tests/regression-core.test.js` — 47 test regression, chỉ bảo vệ các tính năng đã có ở `main` (auth, doctors, slots, appointments). Có ở mọi nhánh.
+- `tests/waitlist.test.js` — 18 test cho tính năng waitlist mới. Chỉ có ở nhánh `day03`.
 
+Chi tiết mục đích và phạm vi của bộ regression: [`doc/regression-testing.md`](./doc/regression-testing.md).
+
+> `--test-concurrency=1` là bắt buộc: các file test cùng dùng chung 1 database và tự reset dữ liệu trước mỗi ca, chạy song song sẽ deadlock.
 > Lưu ý: nếu source đặt trong thư mục **iCloud (Desktop)**, `require` có thể chậm — nên đặt project ở ổ thường.

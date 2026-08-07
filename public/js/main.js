@@ -11,8 +11,11 @@ import {
 import {
   loadDoctors,
   loadMyAppointments,
+  loadMyOffers,
+  loadMyWaitingList,
   loadSlots,
   loadSpecializations,
+  tickOfferCountdowns,
 } from "./views/patient.js";
 import {
   createSlot,
@@ -20,6 +23,13 @@ import {
   renderSlotDoctorOptions,
   loadStaffAppointments,
 } from "./views/staff.js";
+import {
+  createWaitingListEntry,
+  loadOfferEventsLog,
+  loadWaitingListPanel,
+  renderWaitlistDoctorOptions,
+  renderWaitlistSpecializationOptions,
+} from "./views/waitingList.js";
 
 /* ─────────────────────────────  Giao diện sáng / tối  ───────────────────────────── */
 
@@ -48,11 +58,13 @@ const NAV = {
     ["patientView", "Tổng quan"],
     ["doctorList", "Tìm bác sĩ"],
     ["myAppointments", "Lịch của tôi"],
+    ["myOffersPanel", "Đề xuất của tôi"],
   ],
   staff: [
     ["staffView", "Tổng quan"],
     ["staffAppointments", "Lịch hẹn"],
     ["manageSlots", "Lịch làm việc"],
+    ["waitingListSection", "Danh sách chờ"],
   ],
 };
 
@@ -88,9 +100,14 @@ function renderUserShell() {
 async function loadAll() {
   el("apiStatus").textContent = "Đang đồng bộ";
   if (state.user.role === "patient") {
-    await Promise.all([loadDoctors(), loadMyAppointments()]);
+    await Promise.all([loadDoctors(), loadMyAppointments(), loadMyOffers(), loadMyWaitingList()]);
   } else {
-    await Promise.all([loadStaffAppointments(), loadManageSlots()]);
+    await Promise.all([
+      loadStaffAppointments(),
+      loadManageSlots(),
+      loadWaitingListPanel(),
+      loadOfferEventsLog(),
+    ]);
   }
   el("apiStatus").textContent = "Đã kết nối";
 }
@@ -103,7 +120,21 @@ async function loadAfterLogin() {
   await loadSpecializations();
   await loadDoctors();
   renderSlotDoctorOptions();
+  renderWaitlistDoctorOptions();
+  renderWaitlistSpecializationOptions();
   await loadAll();
+  startOffersPolling();
+}
+
+/* Đính chính 1 (doc/specs/01-context-scope.md §1.2): MedBook không có Notification
+   Service — kênh giao đề xuất duy nhất là bệnh nhân tự poll GET /api/my-offers khi mở app. */
+let offersPollTimer = null;
+function startOffersPolling() {
+  if (offersPollTimer) clearInterval(offersPollTimer);
+  offersPollTimer = setInterval(() => {
+    if (!state.user || state.user.role !== "patient") return;
+    loadMyOffers().catch(() => {});
+  }, 20000);
 }
 
 /* Mọi handler đều đi qua đây để lỗi API hiện thành toast thay vì im lặng. */
@@ -130,11 +161,16 @@ function bindEvents() {
   });
   el("slotDate").addEventListener("change", guard(() => loadSlots()));
   el("refreshMyAppointments").addEventListener("click", guard(loadMyAppointments));
+  el("refreshMyOffers").addEventListener("click", guard(loadMyOffers));
+  el("refreshMyWaitingList").addEventListener("click", guard(loadMyWaitingList));
 
   el("staffDate").addEventListener("change", guard(loadAll));
   el("loadStaffAppointments").addEventListener("click", guard(loadStaffAppointments));
   el("refreshManageSlots").addEventListener("click", guard(loadManageSlots));
   el("slotForm").addEventListener("submit", guard(createSlot));
+  el("waitingListForm").addEventListener("submit", guard(createWaitingListEntry));
+  el("refreshWaitingList").addEventListener("click", guard(loadWaitingListPanel));
+  el("refreshOfferEvents").addEventListener("click", guard(loadOfferEventsLog));
 
   window.addEventListener("medbook:reload", guard(loadAll));
 }
@@ -148,6 +184,7 @@ async function boot() {
 
     await loadUsers();
     bindEvents();
+    setInterval(tickOfferCountdowns, 1000);
 
     if (await restoreSession()) {
       await loadAfterLogin();

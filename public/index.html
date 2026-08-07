@@ -198,6 +198,28 @@
             </header>
             <div id="myAppointments" class="rail-wrap"></div>
           </section>
+
+          <section id="myOffersPanel" class="panel">
+            <header class="panel-head">
+              <div>
+                <h2>Đề xuất của tôi</h2>
+                <p>Khung giờ trống vừa được đề xuất — cần xác nhận trong thời gian quy định.</p>
+              </div>
+              <button id="refreshMyOffers" class="btn btn--quiet" type="button">Tải lại</button>
+            </header>
+            <div id="myOffers" class="rail-wrap"></div>
+          </section>
+
+          <section class="panel">
+            <header class="panel-head">
+              <div>
+                <h2>Danh sách chờ của tôi</h2>
+                <p>Do nhân viên đăng ký hộ khi bạn muốn khám sớm hơn lịch hiện có.</p>
+              </div>
+              <button id="refreshMyWaitingList" class="btn btn--quiet" type="button">Tải lại</button>
+            </header>
+            <div id="myWaitingList" class="rail-wrap"></div>
+          </section>
         </section>
 
         <!-- ───────────  NHÂN VIÊN  ─────────── -->
@@ -206,6 +228,7 @@
             <div><dt>Lịch trong ngày</dt><dd id="staffAppointmentMetric">0</dd></div>
             <div><dt>Khung giờ trống</dt><dd id="availableSlotMetric">0</dd></div>
             <div><dt>Bác sĩ</dt><dd id="staffDoctorMetric">0</dd></div>
+            <div><dt>Đang chờ</dt><dd id="waitingListMetric">0</dd></div>
           </dl>
 
           <div class="cols">
@@ -255,6 +278,55 @@
               </form>
 
               <div id="manageSlots" class="rail-wrap"></div>
+            </section>
+          </div>
+
+          <div class="cols">
+            <section id="waitingListSection" class="panel panel--rail">
+              <header class="panel-head">
+                <div>
+                  <h2>Danh sách chờ</h2>
+                  <p>Thêm bệnh nhân theo bác sĩ hoặc chuyên khoa, kèm mức ưu tiên y tế.</p>
+                </div>
+                <button id="refreshWaitingList" class="btn btn--quiet" type="button">Tải lại</button>
+              </header>
+
+              <form id="waitingListForm" class="newslot">
+                <label class="field">
+                  <span class="field-label">ID bệnh nhân</span>
+                  <input id="waitlistPatientId" type="number" min="1" placeholder="VD: 2" required />
+                </label>
+                <label class="field">
+                  <span class="field-label">Bác sĩ</span>
+                  <select id="waitlistDoctor"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Hoặc chuyên khoa (khi không chọn bác sĩ)</span>
+                  <select id="waitlistSpecialization"></select>
+                </label>
+                <label class="field">
+                  <span class="field-label">Mức ưu tiên y tế</span>
+                  <select id="waitlistPriority">
+                    <option value="normal">Bình thường</option>
+                    <option value="high">Cao</option>
+                    <option value="urgent">Khẩn cấp</option>
+                  </select>
+                </label>
+                <button type="submit" class="btn btn--primary btn--block">Thêm vào danh sách chờ</button>
+              </form>
+
+              <div id="waitingListPanel" class="rail-wrap"></div>
+            </section>
+
+            <section class="panel panel--rail">
+              <header class="panel-head">
+                <div>
+                  <h2>Nhật ký đề xuất</h2>
+                  <p>Lịch sử gửi / chấp nhận / từ chối / hết hạn — trả lời "vì sao người này được mời trước".</p>
+                </div>
+                <button id="refreshOfferEvents" class="btn btn--quiet" type="button">Tải lại</button>
+              </header>
+              <div id="offerEventsLog" class="rail-wrap"></div>
             </section>
           </div>
         </section>

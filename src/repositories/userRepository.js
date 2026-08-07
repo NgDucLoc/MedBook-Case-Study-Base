@@ -19,8 +19,23 @@ async function findForLoginByEmail(email) {
   return rows[0] || null;
 }
 
+async function findByPatientId(patientId) {
+  const rows = await query(
+    `select ${publicUserColumns} from users where patient_id = $1 order by id limit 1`,
+    [patientId],
+  );
+  return rows[0] || null;
+}
+
+async function listStaffIds() {
+  const rows = await query(`select id from users where role = 'staff' order by id`);
+  return rows.map((row) => row.id);
+}
+
 module.exports = {
   listDemoUsers,
   findPublicById,
   findForLoginByEmail,
+  findByPatientId,
+  listStaffIds,
 };

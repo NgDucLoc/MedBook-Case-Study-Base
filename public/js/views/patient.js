@@ -149,3 +149,103 @@ export async function cancelAppointment(id) {
   toast("Đã hủy lịch hẹn");
   window.dispatchEvent(new CustomEvent("medbook:reload"));
 }
+
+/* ───────────  Đề xuất (Offer Engine) — US-03/04/05  ─────────── */
+
+function formatCountdown(seconds) {
+  const clamped = Math.max(0, Number(seconds) || 0);
+  const m = Math.floor(clamped / 60);
+  const s = clamped % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+export async function loadMyOffers() {
+  if (state.user.role !== "patient") return;
+
+  const offers = await api("/api/my-offers");
+  const list = el("myOffers");
+  renderRail(list, offers, {
+    emptyText: "Hiện chưa có đề xuất nào. Khi có khung giờ phù hợp, đề xuất sẽ xuất hiện ở đây.",
+    row: (item) => ({
+      state: item.remainingSeconds > 0 ? "is-pending" : "is-off",
+      body: `
+        <span class="rail-main">
+          <span class="rail-title">${escapeHtml(item.doctorName)}</span>
+          <span class="rail-meta">
+            ${escapeHtml(item.specialization)} · Phòng ${escapeHtml(item.room)} · ${escapeHtml(labels[item.appointmentType])}
+          </span>
+          <span class="rail-meta">
+            ${
+              item.remainingSeconds > 0
+                ? `Đề xuất — cần xác nhận trong <b class="offer-countdown" data-remaining="${escapeHtml(item.remainingSeconds)}">${formatCountdown(item.remainingSeconds)}</b>`
+                : `<b class="offer-countdown" data-remaining="0">Đề xuất đã hết hạn</b>`
+            }
+          </span>
+        </span>
+        <span class="rail-actions">
+          <button class="btn btn--primary btn--sm" data-accept="${escapeHtml(item.id)}" ${item.remainingSeconds > 0 ? "" : "disabled"}>Chấp nhận</button>
+          <button class="btn btn--quiet btn--sm" data-decline="${escapeHtml(item.id)}" ${item.remainingSeconds > 0 ? "" : "disabled"}>Từ chối</button>
+        </span>
+      `,
+    }),
+  });
+
+  onClick(list, "[data-accept]", (button) => acceptOffer(Number(button.dataset.accept)));
+  onClick(list, "[data-decline]", (button) => declineOffer(Number(button.dataset.decline)));
+}
+
+/** Đếm ngược tại chỗ mỗi giây, không gọi lại API — chỉ vô hiệu hoá nút khi hết hạn. */
+export function tickOfferCountdowns() {
+  document.querySelectorAll(".offer-countdown").forEach((node) => {
+    const remaining = Number(node.dataset.remaining) - 1;
+    if (Number(node.dataset.remaining) <= 0) return;
+    node.dataset.remaining = String(remaining);
+    if (remaining <= 0) {
+      node.textContent = "Đề xuất đã hết hạn";
+      node.closest(".rail-row")
+        ?.querySelectorAll("[data-accept], [data-decline]")
+        .forEach((button) => {
+          button.disabled = true;
+        });
+    } else {
+      node.textContent = formatCountdown(remaining);
+    }
+  });
+}
+
+export async function acceptOffer(id) {
+  await api(`/api/offers/${id}/accept`, { method: "POST", body: "{}" });
+  toast("Đã xác nhận đề xuất — lịch hẹn mới đã được tạo");
+  window.dispatchEvent(new CustomEvent("medbook:reload"));
+}
+
+export async function declineOffer(id) {
+  await api(`/api/offers/${id}/decline`, { method: "POST", body: "{}" });
+  toast("Đã từ chối đề xuất");
+  await loadMyOffers();
+}
+
+export async function loadMyWaitingList() {
+  if (state.user.role !== "patient") return;
+
+  const entries = await api("/api/my-waiting-list");
+  const list = el("myWaitingList");
+  list.innerHTML = entries.length
+    ? entries
+        .map(
+          (item) => `
+            <article class="doctor">
+              <span class="doctor-mono" aria-hidden="true">${escapeHtml(monogram(item.doctorName || item.specialization || "?"))}</span>
+              <div class="doctor-main">
+                <span class="doctor-name">${escapeHtml(item.doctorName || item.specialization)}</span>
+                <p class="doctor-meta">Đăng ký từ ${escapeHtml(item.createdAt)}</p>
+              </div>
+              <span class="chip ${item.status === "offered" ? "chip--pending" : "chip--open"}">
+                ${escapeHtml(labels[item.status] || item.status)}
+              </span>
+            </article>
+          `,
+        )
+        .join("")
+    : empty("Bạn chưa có trong danh sách chờ nào.");
+}
