@@ -1,6 +1,6 @@
 # Day 4 — Bộ tài liệu học viên (AI-Driven Quality Governance & Failure Analysis)
 
-Bộ file này đi kèm **`WB-4.docx`**. Day 4 **không viết code mới**: học viên audit sản phẩm Day 1–3 của chính nhóm, mỗi bước điền vào một file template ở `bai-nop/`.
+Bộ file này đi kèm **`WB-4.docx`**. Day 4 **không viết code mới**: học viên audit sản phẩm Day 1–3 của chính nhóm, mỗi bước tạo một file output theo yêu cầu của `WB-4.docx`.
 
 ## Đầu vào (input) — Bước 0 Readiness Check
 
