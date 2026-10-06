@@ -15,16 +15,18 @@ Bộ file này đi kèm **`WB-4.docx`**. Day 4 **không viết code mới**: h�
 
 > ⚠️ Có hai bản "Day 2" với số luật khác nhau: bài làm của nhóm (`dau-vao/day2-bai-lam/`, BR-01..16, 43 AC) và spec FROZEN (`doc/specs/`, BR-01..08, 41 AC). Bản nào là input đúng của Day 3, và Day 3 đã dùng bản nào, là câu hỏi của Bước 1.
 
-## Các bước và template
+## Các bước và output (chi tiết trong `WB-4.docx`)
 
-| Bước (WB-4) | Template | Output |
+| Bước | Việc phải làm | Output |
 |---|---|---|
-| Bước 0 — Readiness Check | [`bai-nop/00-readiness-check.md`](bai-nop/00-readiness-check.md) | Bảng Đã có / Có một phần / Chưa có |
-| Bước 1 — SDLC Context-Drift Audit | [`bai-nop/01-context-drift-log.md`](bai-nop/01-context-drift-log.md) | SDLC Context-Drift Log |
-| Bước 2 — Code & Test-Coverage Failure Analysis | [`bai-nop/02-code-failure-findings.md`](bai-nop/02-code-failure-findings.md) | Code Failure Findings (BR-01..08, 41 AC) |
-| Bước 3 — Phân loại nguyên nhân gốc | [`bai-nop/03-root-cause-classification.md`](bai-nop/03-root-cause-classification.md) | Root Cause Classification |
-| Bước 4 — Governance Charter | [`bai-nop/04-governance-charter.md`](bai-nop/04-governance-charter.md) | Governance Charter (3–5 rule) |
-| Trình bày 5 phút | [`bai-nop/05-trinh-bay.md`](bai-nop/05-trinh-bay.md) | 5 nội dung trình bày + câu hỏi mở |
+| Bước 0 | Readiness Check — đủ artifact để audit chưa? | Bảng Đã có / Có một phần / Chưa có |
+| Bước 1 | SDLC Context-Drift Audit | SDLC Context-Drift Log |
+| Bước 2 | Code & Test-Coverage Failure Analysis (đối chiếu BR-01..08 và 41 AC) | Code Failure Findings |
+| Bước 3 | Phân loại nguyên nhân gốc (5 nhãn) + mức độ | Root Cause Classification |
+| Bước 4 | Thiết kế 3–5 governance rule kiểm chứng được | Governance Charter |
+| Trình bày | 5 phút/nhóm | Context-Drift Audit · 3 finding quan trọng nhất · Root Cause Distribution · 3 rule Charter · một câu hỏi mở |
+
+Học viên tự tạo các file output; bộ này không kèm template.
 
 ## Nguyên tắc
 
